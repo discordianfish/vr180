@@ -13,6 +13,18 @@ ffmpeg -f v4l2 -i /dev/video0 -i /dev/video2 -filter_complex '[0:v]pad=iw*2:ih[i
 ```
 
 ### Recording
+SBS but slow:
 ```
-ffmpeg -f v4l2 -i /dev/video0 -i /dev/video2 -filter_complex "[1:v][0:v]scale2ref=oh*mdar:ih[1v][0v];[2:v][0v]scale2ref=oh*mdar:ih[2v][0v];[0v][1v][2v]hstack=3,scale='2*trunc(iw/2)':'2*trunc(ih/2)'" -codec copy test.mkv                       
+ffmpeg -f v4l2 -input_format mjpeg -i /dev/video0 -i /dev/video2 -filter_complex "nullsrc=size=2560x720 [background];
+[0:v] setpts=PTS-STARTPTS, scale=1280x720 [left];
+[1:v] setpts=PTS-STARTPTS, scale=1280x720 [right];
+[background][left]       overlay=shortest=1       [background+left];
+[background+left][right] overlay=shortest=1:x=1280 [left+right]
+" -map [left+right] out.mkv 
 ```
+
+Different streams:
+```
+ffmpeg -f v4l2 -input_format mjpeg -i /dev/video0 -i /dev/video2 -map 0 -map 1 -codec copy /mnt/test/out.ts
+```
+
